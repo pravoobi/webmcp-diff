@@ -1,0 +1,24 @@
+{
+  "name": "@webmcp-contract/cli",
+  "version": "0.1.0",
+  "description": "webmcp-contract — snapshot, diff, and check WebMCP tool contracts",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "webmcp-contract": "./dist/bin.js"
+  },
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@webmcp-contract/contract": "workspace:*",
+    "@webmcp-contract/diff": "workspace:*",
+    "@webmcp-contract/extract": "workspace:*",
+    "@mcp-b/webmcp-polyfill": "5.1.0",
+    "playwright": "^1.49.1"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.123.0"
+  },
+  "files": ["dist"]
+}

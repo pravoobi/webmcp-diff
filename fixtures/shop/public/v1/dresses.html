@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dresses</title>
+    <script src="/polyfill.js"></script>
+  </head>
+  <body>
+    <h1>Dresses</h1>
+
+    <form
+      toolname="filter_dresses"
+      tooldescription="Filter the visible dress list by price and brand."
+    >
+      <label>Max price <input name="max_price" type="number" toolparamdescription="Highest price to show, in USD" /></label>
+      <label>
+        Brand
+        <select name="brand" toolparamdescription="Brand to filter by">
+          <option value="acme">Acme</option>
+          <option value="zenith">Zenith</option>
+          <option value="orbit">Orbit</option>
+        </select>
+      </label>
+      <button type="submit">Filter</button>
+    </form>
+
+    <script type="module">
+      const ctl = new AbortController();
+      await document.modelContext.registerTool(
+        {
+          name: "search_dresses",
+          description: "Search the dress catalog and return matching products.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Free-text search terms" },
+              size: { type: "string", enum: ["xs", "s", "m", "l", "xl"] },
+              color: { type: "string", enum: ["black", "blue", "red"] },
+              in_stock: { type: "boolean" },
+            },
+            required: ["query"],
+          },
+          annotations: { readOnlyHint: true },
+          execute: async ({ query }) => ({ results: [], query }),
+        },
+        { signal: ctl.signal },
+      );
+
+      document.querySelector("form[toolname]").addEventListener("submit", (event) => {
+        if (!event.agentInvoked) return;
+        event.preventDefault();
+        event.respondWith(Promise.resolve({ filtered: [] }));
+      });
+    </script>
+  </body>
+</html>

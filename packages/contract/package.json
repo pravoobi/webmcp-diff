@@ -1,0 +1,25 @@
+{
+  "name": "@webmcp-contract/contract",
+  "version": "0.1.0",
+  "description": "WebMCP tool contract format, canonicalization, and risk classification",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "files": ["dist"]
+}

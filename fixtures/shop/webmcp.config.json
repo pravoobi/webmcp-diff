@@ -1,0 +1,11 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "app": { "name": "dress-shop" },
+  "quiescenceMs": 400,
+  "routes": [
+    { "path": "/" },
+    { "path": "/dresses" },
+    { "path": "/cart" },
+    { "path": "/cart", "setup": "setup/cart-has-item.mjs", "state": "cart-has-item" }
+  ]
+}

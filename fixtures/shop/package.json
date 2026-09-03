@@ -1,0 +1,13 @@
+{
+  "name": "@webmcp-contract/fixture-shop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny WebMCP-enabled shop app with two versions, for contract-diff tests",
+  "scripts": {
+    "start": "node serve.mjs"
+  },
+  "dependencies": {
+    "@mcp-b/webmcp-polyfill": "5.1.0"
+  }
+}

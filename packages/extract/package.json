@@ -1,0 +1,30 @@
+{
+  "name": "@webmcp-contract/extract",
+  "version": "0.1.0",
+  "description": "Playwright-based WebMCP tool-contract extractor",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean"
+  },
+  "dependencies": {
+    "@mcp-b/webmcp-polyfill": "5.1.0",
+    "@webmcp-contract/contract": "workspace:*",
+    "playwright": "^1.49.1"
+  },
+  "files": ["dist"]
+}

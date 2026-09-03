@@ -1,0 +1,188 @@
+{
+  "app": {
+    "name": "dress-shop"
+  },
+  "capturedAt": "2026-01-01T00:00:00.000Z",
+  "contractVersion": 1,
+  "coverage": {
+    "routesCaptured": [
+      "/",
+      "/cart",
+      "/dresses"
+    ],
+    "statesCaptured": [
+      "cart-has-item"
+    ]
+  },
+  "digest": "37bae06b2deea8db3569708c716f2e81b1050233e0fef0904d4a3736863669ab",
+  "environment": {
+    "extractor": "0.1.0",
+    "polyfill": "@mcp-b/webmcp-polyfill@5.1.0",
+    "surface": "document.modelContext"
+  },
+  "routes": [
+    {
+      "path": "/",
+      "tools": [
+        {
+          "annotations": {
+            "readOnlyHint": true,
+            "untrustedContentHint": false
+          },
+          "description": "Return the shop name, opening hours, and shipping regions.",
+          "hash": "4a1704b5e8ac97a0",
+          "inputSchema": {
+            "properties": {},
+            "type": "object"
+          },
+          "lifecycle": "static",
+          "name": "get_shop_info",
+          "risk": "read",
+          "source": "imperative"
+        }
+      ]
+    },
+    {
+      "path": "/cart",
+      "tools": [
+        {
+          "annotations": {},
+          "description": "Add a product to the shopping cart.",
+          "hash": "3324ad9b9e8d91e5",
+          "inputSchema": {
+            "properties": {
+              "product_id": {
+                "type": "string"
+              },
+              "quantity": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "product_id"
+            ],
+            "type": "object"
+          },
+          "lifecycle": "static",
+          "name": "add_to_cart",
+          "risk": "write",
+          "source": "imperative"
+        },
+        {
+          "annotations": {},
+          "description": "Apply a promotional discount code to the current cart.",
+          "hash": "735330464ed79e36",
+          "inputSchema": {
+            "properties": {
+              "code": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code"
+            ],
+            "type": "object"
+          },
+          "lifecycle": "conditional",
+          "name": "apply_promo_code",
+          "risk": "write",
+          "source": "imperative",
+          "states": [
+            "cart-has-item"
+          ]
+        },
+        {
+          "annotations": {},
+          "description": "Place the order and charge the saved payment card.",
+          "hash": "efbc415a36dead8c",
+          "inputSchema": {
+            "properties": {},
+            "type": "object"
+          },
+          "lifecycle": "static",
+          "name": "checkout",
+          "risk": "destructive",
+          "source": "imperative"
+        }
+      ]
+    },
+    {
+      "path": "/dresses",
+      "tools": [
+        {
+          "annotations": {},
+          "description": "Filter the visible dress list by price and brand.",
+          "hash": "c1dc680ee13e0040",
+          "inputSchema": {
+            "properties": {
+              "brand": {
+                "description": "Brand to filter by",
+                "enum": [
+                  "acme",
+                  "orbit",
+                  "zenith"
+                ],
+                "type": "string"
+              },
+              "max_price": {
+                "description": "Highest price to show, in USD",
+                "multipleOf": 1,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "lifecycle": "static",
+          "name": "filter_dresses",
+          "risk": "read",
+          "source": "declarative-form"
+        },
+        {
+          "annotations": {
+            "readOnlyHint": true,
+            "untrustedContentHint": false
+          },
+          "description": "Search the dress catalog and return matching products.",
+          "hash": "53c817e2b6bca099",
+          "inputSchema": {
+            "properties": {
+              "color": {
+                "enum": [
+                  "black",
+                  "blue",
+                  "red"
+                ],
+                "type": "string"
+              },
+              "in_stock": {
+                "type": "boolean"
+              },
+              "query": {
+                "description": "Free-text search terms",
+                "type": "string"
+              },
+              "size": {
+                "enum": [
+                  "l",
+                  "m",
+                  "s",
+                  "xl",
+                  "xs"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "type": "object"
+          },
+          "lifecycle": "static",
+          "name": "search_dresses",
+          "risk": "read",
+          "source": "imperative"
+        }
+      ]
+    }
+  ]
+}

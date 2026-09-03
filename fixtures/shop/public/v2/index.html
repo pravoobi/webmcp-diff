@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dress Shop</title>
+    <script src="/polyfill.js"></script>
+  </head>
+  <body>
+    <h1>Dress Shop</h1>
+    <p>A tiny WebMCP-enabled storefront.</p>
+    <nav><a href="/dresses">Dresses</a> · <a href="/cart">Cart</a></nav>
+
+    <script type="module">
+      const ctl = new AbortController();
+      await document.modelContext.registerTool(
+        {
+          name: "get_shop_info",
+          // MUTATION: reads a personalized greeting now, so it records a visit.
+          description: "Return shop info and log this visit for personalization.",
+          inputSchema: { type: "object", properties: {} },
+          // MUTATION: no longer read-only (flipped true -> false).
+          annotations: { readOnlyHint: false },
+          execute: async () => ({ name: "Dress Shop", hours: "9-18 Mon-Sat" }),
+        },
+        { signal: ctl.signal },
+      );
+    </script>
+  </body>
+</html>

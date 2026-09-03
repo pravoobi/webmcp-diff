@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cart</title>
+    <script src="/polyfill.js"></script>
+  </head>
+  <body>
+    <h1>Your Cart</h1>
+    <button id="add-sample">Add sample item</button>
+    <p id="cart-count">0 items</p>
+
+    <script type="module">
+      const ctl = new AbortController();
+
+      await document.modelContext.registerTool(
+        {
+          name: "add_to_cart",
+          // MUTATION: description reworded (info-level change)
+          description: "Add a product (and optional quantity) to the shopping bag.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              product_id: { type: "string" },
+              quantity: { type: "integer" },
+            },
+            required: ["product_id"],
+          },
+          execute: async (input) => ({ ok: true, ...input }),
+        },
+        { signal: ctl.signal },
+      );
+
+      // MUTATION: 'checkout' renamed to 'place_order' (same schema + intent)
+      await document.modelContext.registerTool(
+        {
+          name: "place_order",
+          description: "Place the order and charge the saved payment card.",
+          inputSchema: { type: "object", properties: {} },
+          execute: async () => ({ orderId: "demo" }),
+        },
+        { signal: ctl.signal },
+      );
+
+      // MUTATION: brand-new destructive tool
+      await document.modelContext.registerTool(
+        {
+          name: "delete_account",
+          description: "Permanently delete the customer account and all order history.",
+          inputSchema: {
+            type: "object",
+            properties: { confirm: { type: "boolean" } },
+            required: ["confirm"],
+          },
+          execute: async () => ({ deleted: true }),
+        },
+        { signal: ctl.signal },
+      );
+
+      let promoCtl = null;
+      const items = [];
+      const registerPromo = async () => {
+        if (promoCtl) return;
+        promoCtl = new AbortController();
+        await document.modelContext.registerTool(
+          {
+            name: "apply_promo_code",
+            description: "Apply a promotional discount code to the current cart.",
+            inputSchema: {
+              type: "object",
+              properties: { code: { type: "string" } },
+              required: ["code"],
+            },
+            execute: async ({ code }) => ({ applied: code }),
+          },
+          { signal: promoCtl.signal },
+        );
+      };
+
+      document.getElementById("add-sample").addEventListener("click", async () => {
+        items.push({ product_id: "sku-1", quantity: 1 });
+        document.getElementById("cart-count").textContent = `${items.length} items`;
+        await registerPromo();
+      });
+    </script>
+  </body>
+</html>
