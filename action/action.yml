@@ -132,7 +132,10 @@ runs:
         set -e
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
         echo "report=$report" >> "$GITHUB_OUTPUT"
-        cat "$report" >> "$GITHUB_STEP_SUMMARY"
+        # `check` skips writing -o on a BaselineError (missing/unreadable baseline) — don't let a
+        # bare `cat` on a nonexistent report crash this step out from under `set -e`; fall through
+        # to "Enforce result" so the job fails on $code instead of a confusing shell error here.
+        [ -f "$report" ] && cat "$report" >> "$GITHUB_STEP_SUMMARY" || true
 
     - name: Comment on PR
       if: ${{ inputs.comment == 'true' && github.event_name == 'pull_request' }}
@@ -141,7 +144,16 @@ runs:
         GH_TOKEN: ${{ github.token }}
         MARKER: "<!-- webmcp-contract-diff -->"
       run: |
-        { echo "$MARKER"; echo; cat "${{ steps.diff.outputs.report }}"; } > "${RUNNER_TEMP}/comment.md"
+        report="${{ steps.diff.outputs.report }}"
+        {
+          echo "$MARKER"
+          echo
+          if [ -f "$report" ]; then
+            cat "$report"
+          else
+            echo "⚠️ \`webmcp-contract check\` could not produce a report (exit code ${{ steps.diff.outputs.exit-code }}) — see the job log."
+          fi
+        } > "${RUNNER_TEMP}/comment.md"
         api="repos/${{ github.repository }}/issues/${{ github.event.number }}/comments"
         id="$(gh api "$api" --paginate \
           --jq "map(select(.body | startswith(\"$MARKER\"))) | .[0].id // empty")"
