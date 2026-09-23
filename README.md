@@ -22,6 +22,7 @@ and reviewable.
 | [`@webmcp-contract/diff`](packages/diff) | Structural + semantic diff engine and reporters (text, markdown, json, sarif, html) |
 | [`@webmcp-contract/cli`](packages/cli) | `webmcp-contract snapshot \| diff \| check` |
 | [`action/`](action) | GitHub Action: snapshot on main, diff on PRs, comment the delta |
+| [`viewer/`](viewer) | Static, dependency-free HTML page for browsing/sharing a contract or a diff |
 
 ## Install
 

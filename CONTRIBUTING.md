@@ -35,6 +35,7 @@ pnpm build         # tsup, all packages
 | `packages/cli` | `webmcp-contract` bin; `check` core is also exported at `@webmcp-contract/cli/check` |
 | `fixtures/shop` | two-version WebMCP app driving the integration tests |
 | `action/` | composite GitHub Action |
+| `viewer/` | static, dependency-free HTML page for browsing/sharing a contract or a diff |
 
 ## Tests
 

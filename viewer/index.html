@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebMCP Contract Viewer</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #666666; --border: #e2e2e2; --card: #f7f7f8;
+    --accent: #2563eb; --breaking: #dc2626; --risk: #ea580c; --warn: #ca8a04; --info: #2563eb;
+    --read: #16a34a; --write: #ea580c; --destructive: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17181c; --fg: #eaeaea; --muted: #9a9a9a; --border: #333438; --card: #1f2024; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.25rem 4rem; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; margin: 0 0 1.25rem; }
+  h2 { font-size: 1rem; margin: 0; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .muted { color: var(--muted); }
+
+  /* --- landing / load UI --- */
+  #drop {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 2.5rem 1.5rem; text-align: center;
+    color: var(--muted); transition: border-color 0.15s, background 0.15s;
+  }
+  #drop.hover { border-color: var(--accent); background: var(--card); }
+  #drop button {
+    font: inherit; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--card); color: var(--fg); cursor: pointer; margin: 0 0.25rem;
+  }
+  #drop button:hover { border-color: var(--accent); }
+  .url-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap; }
+  .url-row input {
+    font: inherit; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--fg); width: 22rem; max-width: 100%;
+  }
+  #error { color: var(--breaking); margin-top: 1rem; white-space: pre-wrap; }
+  [hidden] { display: none; }
+
+  /* --- loaded-content chrome --- */
+  .toolbar { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; gap: 1rem; }
+  .toolbar .source { font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; }
+  #reset {
+    font: inherit; font-size: 0.85rem; padding: 0.3rem 0.7rem; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--card); color: var(--fg); cursor: pointer; white-space: nowrap;
+  }
+
+  /* --- contract view --- */
+  .meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .meta code { background: var(--card); padding: 0.1rem 0.4rem; border-radius: 4px; }
+  .route { margin-bottom: 1.75rem; }
+  .route h2 { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-bottom: 0.6rem; }
+  .route .empty { font-size: 0.9rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: top; }
+  th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .tool-name { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 600; }
+  .badge { display: inline-block; border-radius: 999px; padding: 0.1rem 0.55rem; font-size: 0.75rem; border: 1px solid var(--border); white-space: nowrap; }
+  .badge-read { color: var(--read); border-color: var(--read); }
+  .badge-write { color: var(--write); border-color: var(--write); }
+  .badge-destructive { color: var(--destructive); border-color: var(--destructive); background: color-mix(in srgb, var(--destructive) 10%, transparent); }
+
+  /* --- diff view (mirrors the `html` CLI reporter) --- */
+  .verdict { font-weight: 600; margin: 0 0 1.25rem; }
+  .pills { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0 0 2rem; }
+  .pill { border: 1px solid var(--border); border-radius: 999px; padding: 0.3rem 0.75rem; font-size: 0.9rem; }
+  .pill b { font-variant-numeric: tabular-nums; }
+  .group { margin: 0 0 2rem; }
+  .group h2 { margin: 0 0 0.75rem; }
+  .group-breaking h2 { color: var(--breaking); }
+  .group-risk h2 { color: var(--risk); }
+  .group-warn h2 { color: var(--warn); }
+  .group-info h2 { color: var(--info); }
+  ul.changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+  .change { border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; background: var(--card); }
+  .change-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
+  .where { font-weight: 600; }
+  .change-code { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .message { margin: 0.35rem 0 0; }
+  details { margin-top: 0.6rem; }
+  summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+  .tool-details pre { margin: 0.4rem 0 0; padding: 0.6rem 0.7rem; background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow-x: auto; font-size: 0.8rem; }
+  .frags { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .frag { flex: 1 1 260px; min-width: 0; }
+  .frag-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem; }
+  .frag pre { margin: 0; padding: 0.6rem 0.7rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; overflow-x: auto; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>WebMCP Contract Viewer</h1>
+
+  <section id="landing">
+    <div id="drop">
+      <p>Drop a <code>webmcp-contract.json</code> or a <code>diff --format json</code> file here,<br>
+        or <button type="button" id="pick">choose a file</button></p>
+      <input type="file" id="file-input" accept="application/json,.json" hidden>
+      <div class="url-row">
+        <input type="text" id="url-input" placeholder="…or paste a URL to fetch (needs CORS)">
+        <button type="button" id="load-url">Load URL</button>
+      </div>
+    </div>
+    <p id="error" hidden></p>
+  </section>
+
+  <section id="content" hidden>
+    <div class="toolbar">
+      <span class="source" id="source-label"></span>
+      <button type="button" id="reset">Load another file</button>
+    </div>
+    <div id="rendered"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const SEVERITY_LABEL = { breaking: "BREAKING", risk: "RISK", warn: "WARN", info: "INFO" };
+  const SEVERITY_EMOJI = { breaking: "🔴", risk: "🟠", warn: "🟡", info: "🔵" };
+  const SEVERITY_ORDER = ["breaking", "risk", "warn", "info"];
+
+  const $ = (id) => document.getElementById(id);
+  const landing = $("landing"), content = $("content"), errorEl = $("error");
+  const sourceLabel = $("source-label"), rendered = $("rendered");
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.hidden = false;
+  }
+
+  function clearError() {
+    errorEl.hidden = true;
+    errorEl.textContent = "";
+  }
+
+  function isDiffResult(data) {
+    return data && Array.isArray(data.changes) && data.summary && data.from && data.to;
+  }
+
+  function isContract(data) {
+    return data && typeof data.contractVersion === "number" && Array.isArray(data.routes) && data.environment;
+  }
+
+  // ---------- contract rendering ----------
+
+  function riskBadge(risk) {
+    return `<span class="badge badge-${escapeHtml(risk)}">${escapeHtml(risk)}</span>`;
+  }
+
+  function renderTool(tool) {
+    const states = tool.states?.length ? ` <span class="muted">[${tool.states.map(escapeHtml).join(", ")}]</span>` : "";
+    const lifecycle = tool.lifecycle === "conditional" ? `conditional${states}` : "static";
+    return `<tr>
+      <td class="tool-name">${escapeHtml(tool.name)}</td>
+      <td>${riskBadge(tool.risk)}</td>
+      <td>${escapeHtml(tool.source)}</td>
+      <td>${escapeHtml(lifecycle)}</td>
+      <td>${escapeHtml(tool.description)}
+        <details class="tool-details"><summary>schema / annotations</summary>
+          <pre>${escapeHtml(JSON.stringify({ inputSchema: tool.inputSchema, annotations: tool.annotations }, null, 2))}</pre>
+        </details>
+      </td>
+    </tr>`;
+  }
+
+  function renderContract(c) {
+    const app = c.app.name + (c.app.version ? ` @ ${c.app.version}` : "") + (c.app.commit ? ` (${c.app.commit.slice(0, 12)})` : "");
+    const routesHtml = c.routes.map((route) => {
+      const rows = route.tools.length
+        ? `<table><thead><tr><th>Tool</th><th>Risk</th><th>Source</th><th>Lifecycle</th><th>Description</th></tr></thead>
+             <tbody>${route.tools.map(renderTool).join("")}</tbody></table>`
+        : `<p class="empty muted">No tools registered on this route.</p>`;
+      return `<section class="route"><h2>${escapeHtml(route.path)}</h2>${rows}</section>`;
+    }).join("");
+
+    sourceLabel.textContent = `Contract: ${app}`;
+    rendered.innerHTML = `
+      <div class="meta">
+        <span>captured <code>${escapeHtml(c.capturedAt)}</code></span>
+        <span>digest <code>${escapeHtml(c.digest.slice(0, 12))}</code></span>
+        <span>surface <code>${escapeHtml(c.environment.surface)}</code></span>
+        <span>polyfill <code>${escapeHtml(c.environment.polyfill)}</code></span>
+        <span>routes captured <code>${c.coverage.routesCaptured.length}</code></span>
+      </div>
+      ${routesHtml || '<p class="muted">No routes in this contract.</p>'}
+    `;
+  }
+
+  // ---------- diff rendering (mirrors packages/diff/src/reporters.ts htmlReport) ----------
+
+  function renderFragmentsHtml(c) {
+    if (c.before === undefined && c.after === undefined) return "";
+    const parts = [];
+    if (c.before !== undefined) {
+      parts.push(`<div class="frag"><div class="frag-label">before</div><pre>${escapeHtml(JSON.stringify(c.before, null, 2))}</pre></div>`);
+    }
+    if (c.after !== undefined) {
+      parts.push(`<div class="frag"><div class="frag-label">after</div><pre>${escapeHtml(JSON.stringify(c.after, null, 2))}</pre></div>`);
+    }
+    return `<div class="frags">${parts.join("")}</div>`;
+  }
+
+  function renderDiff(result) {
+    const verdict = result.exitCode === 1 ? "🔴 Breaking / risk-increasing changes" : "🟢 No blocking changes";
+    const summaryRows = SEVERITY_ORDER
+      .filter((sev) => result.summary[sev] > 0)
+      .map((sev) => `<span class="pill">${SEVERITY_EMOJI[sev]} ${SEVERITY_LABEL[sev]} <b>${result.summary[sev]}</b></span>`)
+      .join("");
+
+    const groups = SEVERITY_ORDER.map((sev) => {
+      const changes = result.changes.filter((c) => c.severity === sev);
+      if (!changes.length) return "";
+      const items = changes.map((c) => {
+        const where = escapeHtml(c.route) + (c.tool ? ` › ${escapeHtml(c.tool)}` : "");
+        const frag = renderFragmentsHtml(c);
+        return `<li class="change">
+          <div class="change-head"><span class="where">${where}</span><code class="change-code">${escapeHtml(c.code)}</code></div>
+          <p class="message">${escapeHtml(c.message)}</p>
+          ${frag ? `<details><summary>before / after</summary>${frag}</details>` : ""}
+        </li>`;
+      }).join("");
+      return `<section class="group group-${sev}"><h2>${SEVERITY_EMOJI[sev]} ${SEVERITY_LABEL[sev]}</h2><ul class="changes">${items}</ul></section>`;
+    }).join("");
+
+    sourceLabel.textContent = `Diff: ${result.from.app} ${result.from.digest.slice(0, 12)} → ${result.to.digest.slice(0, 12)}`;
+    rendered.innerHTML = `
+      <p class="verdict">${verdict}</p>
+      ${summaryRows ? `<div class="pills">${summaryRows}</div>` : ""}
+      ${result.changes.length === 0 ? '<p class="muted">No contract changes.</p>' : groups}
+    `;
+  }
+
+  // ---------- load / dispatch ----------
+
+  function display(data, label) {
+    clearError();
+    if (isDiffResult(data)) {
+      renderDiff(data);
+    } else if (isContract(data)) {
+      renderContract(data);
+    } else {
+      showError("Unrecognized JSON — expected a webmcp-contract.json (has contractVersion + routes) or a `webmcp-contract diff --format json` output (has changes + summary).");
+      return;
+    }
+    landing.hidden = true;
+    content.hidden = false;
+  }
+
+  function loadText(text, label) {
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      showError(`Not valid JSON: ${e.message}`);
+      return;
+    }
+    display(data, label);
+  }
+
+  function loadFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => loadText(String(reader.result), file.name);
+    reader.onerror = () => showError(`Could not read ${file.name}: ${reader.error}`);
+    reader.readAsText(file);
+  }
+
+  async function loadUrl(url) {
+    clearError();
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        showError(`GET ${url} → HTTP ${res.status}`);
+        return;
+      }
+      loadText(await res.text(), url);
+    } catch (e) {
+      showError(`Could not fetch ${url}: ${e.message}\n(the server hosting it must allow CORS)`);
+    }
+  }
+
+  $("pick").addEventListener("click", () => $("file-input").click());
+  $("file-input").addEventListener("change", (e) => {
+    if (e.target.files[0]) loadFile(e.target.files[0]);
+  });
+  $("load-url").addEventListener("click", () => {
+    const url = $("url-input").value.trim();
+    if (url) loadUrl(url);
+  });
+  $("url-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") $("load-url").click();
+  });
+  $("reset").addEventListener("click", () => {
+    content.hidden = true;
+    landing.hidden = false;
+    $("file-input").value = "";
+    clearError();
+  });
+
+  const drop = $("drop");
+  for (const evt of ["dragenter", "dragover"]) {
+    drop.addEventListener(evt, (e) => { e.preventDefault(); drop.classList.add("hover"); });
+  }
+  for (const evt of ["dragleave", "drop"]) {
+    drop.addEventListener(evt, (e) => { e.preventDefault(); drop.classList.remove("hover"); });
+  }
+  drop.addEventListener("drop", (e) => {
+    const file = e.dataTransfer.files?.[0];
+    if (file) loadFile(file);
+  });
+
+  const urlParam = new URLSearchParams(location.search).get("url");
+  if (urlParam) {
+    $("url-input").value = urlParam;
+    loadUrl(urlParam);
+  }
+})();
+</script>
+</body>
+</html>

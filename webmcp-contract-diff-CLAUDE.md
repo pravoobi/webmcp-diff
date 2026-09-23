@@ -13,7 +13,7 @@ A page's registered tools form its Tool Contract — the machine-readable menu o
 3. `packages/diff` — structural + semantic diff engine, reporters (text, markdown, json, sarif, html)
 4. `packages/cli` — `webmcp-contract snapshot|diff|check`
 5. `action/` — GitHub Action: snapshot on main, diff on PRs, comment the delta
-6. Later: tiny web viewer (static HTML) for browsing/sharing a contract or a diff
+6. `viewer/` — tiny web viewer (static HTML) for browsing/sharing a contract or a diff
 
 ## Contract format
 
@@ -115,10 +115,10 @@ webmcp-contract check --base main       # snapshot current, diff vs contract com
 
 ## Implementation status
 
-pnpm monorepo (`packages/{contract,extract,diff,cli}`, `fixtures/shop`, `action/`). `pnpm lint`
-(Biome), `pnpm typecheck`, `pnpm test` (40), `pnpm build` all green; see `README.md` for usage,
-`CONTRIBUTING.md` / `RELEASING.md` for workflow. Versioning via changesets (the four packages are
-a fixed group); `.github/workflows/{ci,release}.yml`.
+pnpm monorepo (`packages/{contract,extract,diff,cli}`, `fixtures/shop`, `action/`, `viewer/`).
+`pnpm lint` (Biome), `pnpm typecheck`, `pnpm test` (42), `pnpm build` all green; see `README.md`
+for usage, `CONTRIBUTING.md` / `RELEASING.md` for workflow. Versioning via changesets (the four
+packages are a fixed group); `.github/workflows/{ci,release}.yml`.
 
 - **M1 — done.** `@webmcp-contract/contract` (canonicalization, risk classify, digest,
   serialize/parse-with-digest-check) and `@webmcp-contract/extract` (Playwright + injected
@@ -128,7 +128,7 @@ a fixed group); `.github/workflows/{ci,release}.yml`.
 - **M2 — done.** `@webmcp-contract/diff`: severity model (`info|warn|risk|breaking`), schema diff
   (required/removed/type-narrowed/enum), annotation + risk + lifecycle + source diff, rename
   detection (schema+name similarity), coverage-aware route handling. Reporters: text, markdown
-  (grouped, collapsible before/after), json, sarif.
+  (grouped, collapsible before/after), json, sarif, html (single self-contained file).
 - **M3 — mostly done.** CLI `snapshot|diff|check`. `check` core is `packages/cli/src/check-core.ts`
   (`runContractCheck` / `resolveBaseline` / `BaselineError`), exported at `@webmcp-contract/cli/check`;
   it reads the baseline with `git show <ref>:./<path>` (cwd-relative, works from subdirs) and treats
@@ -152,6 +152,13 @@ a fixed group); `.github/workflows/{ci,release}.yml`.
   crashed on `cat`ing a report that doesn't exist when `check` hits a `BaselineError` (the standard
   first-time-setup state) — fixed in `aeadfda`, `v0`/`v0.2` moved, `v0.2.1` cut. Not done:
   cross-release archive.
+- **Deliverable #6 — done.** `viewer/index.html`: single static file, no build step, no
+  dependencies. Auto-detects a contract vs. a `diff --format json` result and renders either a
+  per-route tool browser (risk badges, expandable schema/annotations) or the same diff layout as
+  the `html` reporter. Loads via drag-drop, file picker, or `?url=` (fetch, needs CORS on the
+  target) for shareable links. Manually verified in-browser against real fixture data (both
+  shapes, plus the unrecognized-JSON error path) — not part of the vitest suite, since it's a
+  plain-JS static asset outside the package build.
 
 Fixture `fixtures/shop` has a `v1` and `v2` differing by scripted mutations (readOnlyHint flip,
 tightened schema, enum removal, form `toolautosubmit`, tool rename, new destructive tool); the
