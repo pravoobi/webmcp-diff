@@ -12,19 +12,21 @@ inputs:
   server-command:
     description: "Command to start the app under test. Run in the background; the action waits for readiness."
     required: false
+    default: ""
   ready-url:
     description: "URL to poll until the server is ready (defaults to the config's baseUrl)."
     required: false
+    default: ""
   base-ref:
-    description: "Git ref holding the committed baseline contract."
+    description: "Branch (or ref) holding the committed baseline contract. Defaults to the PR base branch, then the repo default branch."
     required: false
-    default: "origin/${{ github.base_ref || github.event.repository.default_branch }}"
+    default: ""
   contract-path:
     description: "Path to the committed contract file."
     required: false
     default: "webmcp-contract.json"
   semantic:
-    description: "Run the LLM-assisted description-drift check (needs ANTHROPIC_API_KEY)."
+    description: "Run the LLM-assisted description-drift check (needs ANTHROPIC_API_KEY in env)."
     required: false
     default: "false"
   risk-as-warning:
@@ -32,17 +34,21 @@ inputs:
     required: false
     default: "false"
   comment:
-    description: "Post the markdown diff as a PR comment."
+    description: "Post/update the markdown diff as a PR comment (needs pull-requests: write)."
     required: false
     default: "true"
   update-on-push:
-    description: "On a push to the default branch, rewrite the committed contract and commit it back."
+    description: "On a push to the default branch, rewrite the committed contract and commit it back (needs contents: write)."
     required: false
     default: "false"
   cli-version:
     description: "Version (npm dist-tag or semver) of @webmcp-contract/cli to run."
     required: false
     default: "latest"
+  working-directory:
+    description: "Directory to run in."
+    required: false
+    default: "."
 
 outputs:
   exit-code:
@@ -55,30 +61,48 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Resolve base URL
+    - name: Resolve settings
       id: cfg
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |
         base_url="$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('${{ inputs.config }}','utf8')).baseUrl)")"
         echo "base-url=$base_url" >> "$GITHUB_OUTPUT"
-        echo "ready-url=${{ inputs.ready-url }}" >> "$GITHUB_OUTPUT"
+
+        base_ref="${{ inputs.base-ref }}"
+        if [ -z "$base_ref" ]; then
+          base_ref="${{ github.base_ref }}"
+        fi
+        if [ -z "$base_ref" ]; then
+          base_ref="${{ github.event.repository.default_branch }}"
+        fi
+        echo "base-ref=$base_ref" >> "$GITHUB_OUTPUT"
+
+    - name: Fetch baseline ref
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        ref="${{ steps.cfg.outputs.base-ref }}"
+        git fetch --no-tags --depth=1 origin "+refs/heads/${ref}:refs/remotes/origin/${ref}" 2>/dev/null \
+          || git fetch --no-tags origin "$ref" 2>/dev/null || true
 
     - name: Install Playwright browser
       shell: bash
       run: npx --yes playwright@1 install --with-deps chromium
 
     - name: Start app
-      if: inputs.server-command != ''
+      if: ${{ inputs.server-command != '' }}
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |
         nohup bash -c '${{ inputs.server-command }}' > "${RUNNER_TEMP}/app.log" 2>&1 &
         echo $! > "${RUNNER_TEMP}/app.pid"
 
     - name: Wait for readiness
-      if: inputs.server-command != ''
+      if: ${{ inputs.server-command != '' }}
       shell: bash
       run: |
-        url="${{ steps.cfg.outputs.ready-url }}"
+        url="${{ inputs.ready-url }}"
         [ -z "$url" ] && url="${{ steps.cfg.outputs.base-url }}"
         for i in $(seq 1 60); do
           if curl -sfo /dev/null "$url"; then echo "ready: $url"; exit 0; fi
@@ -91,6 +115,7 @@ runs:
     - name: Diff contract
       id: diff
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         SEMANTIC_FLAG: ${{ inputs.semantic == 'true' && '--semantic' || '' }}
         RISK_FLAG: ${{ inputs.risk-as-warning == 'true' && '--risk-as-warning' || '' }}
@@ -99,10 +124,9 @@ runs:
         set +e
         npx --yes "@webmcp-contract/cli@${{ inputs.cli-version }}" check \
           --config "${{ inputs.config }}" \
-          --base "${{ inputs.base-ref }}" \
+          --base "origin/${{ steps.cfg.outputs.base-ref }}" \
           --contract "${{ inputs.contract-path }}" \
-          --format md \
-          $SEMANTIC_FLAG $RISK_FLAG \
+          --format md $SEMANTIC_FLAG $RISK_FLAG \
           -o "$report"
         code=$?
         set -e
@@ -111,42 +135,41 @@ runs:
         cat "$report" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Comment on PR
-      if: inputs.comment == 'true' && github.event_name == 'pull_request'
+      if: ${{ inputs.comment == 'true' && github.event_name == 'pull_request' }}
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        MARKER: "<!-- webmcp-contract-diff -->"
       run: |
-        body="$(cat "${{ steps.diff.outputs.report }}")"
-        marker="<!-- webmcp-contract-diff -->"
-        printf '%s\n\n%s\n' "$marker" "$body" > "${RUNNER_TEMP}/comment.md"
-        existing="$(gh pr view "${{ github.event.number }}" --json comments \
-          --jq '.comments[] | select(.body | startswith("<!-- webmcp-contract-diff -->")) | .url' | head -n1)"
-        if [ -n "$existing" ]; then
-          gh api "repos/${{ github.repository }}/issues/comments/${existing##*-}" -X PATCH -F body=@"${RUNNER_TEMP}/comment.md" || \
-            gh pr comment "${{ github.event.number }}" --body-file "${RUNNER_TEMP}/comment.md"
+        { echo "$MARKER"; echo; cat "${{ steps.diff.outputs.report }}"; } > "${RUNNER_TEMP}/comment.md"
+        api="repos/${{ github.repository }}/issues/${{ github.event.number }}/comments"
+        id="$(gh api "$api" --paginate \
+          --jq "map(select(.body | startswith(\"$MARKER\"))) | .[0].id // empty")"
+        if [ -n "$id" ]; then
+          gh api "repos/${{ github.repository }}/issues/comments/$id" -X PATCH -F body=@"${RUNNER_TEMP}/comment.md"
         else
-          gh pr comment "${{ github.event.number }}" --body-file "${RUNNER_TEMP}/comment.md"
+          gh api "$api" -X POST -F body=@"${RUNNER_TEMP}/comment.md"
         fi
 
     - name: Refresh committed contract
-      if: inputs.update-on-push == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      if: ${{ inputs.update-on-push == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: |
         npx --yes "@webmcp-contract/cli@${{ inputs.cli-version }}" snapshot \
           --config "${{ inputs.config }}" -o "${{ inputs.contract-path }}" --quiet
         if ! git diff --quiet -- "${{ inputs.contract-path }}"; then
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "${{ inputs.contract-path }}"
           git commit -m "chore: refresh webmcp contract [skip ci]"
           git push
         fi
 
     - name: Stop app
-      if: always() && inputs.server-command != ''
+      if: ${{ always() && inputs.server-command != '' }}
       shell: bash
-      run: |
-        [ -f "${RUNNER_TEMP}/app.pid" ] && kill "$(cat "${RUNNER_TEMP}/app.pid")" 2>/dev/null || true
+      run: '[ -f "${RUNNER_TEMP}/app.pid" ] && kill "$(cat "${RUNNER_TEMP}/app.pid")" 2>/dev/null || true'
 
     - name: Enforce result
       shell: bash

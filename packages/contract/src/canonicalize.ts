@@ -25,7 +25,7 @@ export function canonicalJson(value: JsonValue): string {
 
 /** Deterministic, human-readable JSON: sorted keys, 2-space indent, trailing newline. */
 export function stableJson(value: JsonValue): string {
-  return JSON.stringify(sortKeysDeep(value), null, 2) + "\n";
+  return `${JSON.stringify(sortKeysDeep(value), null, 2)}\n`;
 }
 
 /** Volatile top-level schema annotations that never affect tool behavior. */
@@ -54,7 +54,7 @@ export function canonicalizeSchema(input: JsonSchema | undefined): JsonSchema {
     const obj = node as Record<string, JsonValue>;
 
     // Resolve local refs.
-    const ref = obj["$ref"];
+    const ref = obj.$ref;
     if (typeof ref === "string" && ref.startsWith("#/")) {
       if (seen.has(ref)) return { $ref: ref }; // cycle: leave as-is
       const resolved = resolvePointer(root, ref);
@@ -75,16 +75,16 @@ export function canonicalizeSchema(input: JsonSchema | undefined): JsonSchema {
       if (STRIP_SCHEMA_KEYS.has(key)) continue;
       if (key === "required" && Array.isArray(value)) {
         const req = [...new Set(value.filter((v): v is string => typeof v === "string"))].sort();
-        if (req.length > 0) out["required"] = req;
+        if (req.length > 0) out.required = req;
         continue;
       }
       if (key === "type" && Array.isArray(value)) {
         const types = [...new Set(value.filter((v): v is string => typeof v === "string"))].sort();
-        out["type"] = types.length === 1 ? (types[0] as string) : types;
+        out.type = types.length === 1 ? (types[0] as string) : types;
         continue;
       }
       if (key === "enum" && Array.isArray(value)) {
-        out["enum"] = sortEnum(value);
+        out.enum = sortEnum(value);
         continue;
       }
       out[key] = walk(value);
@@ -109,7 +109,7 @@ function collapseConstUnion(node: Record<string, JsonValue>): void {
     let allConst = true;
     for (const b of branches) {
       if (b && typeof b === "object" && !Array.isArray(b) && "const" in b) {
-        consts.push((b as Record<string, JsonValue>)["const"] as JsonValue);
+        consts.push((b as Record<string, JsonValue>).const as JsonValue);
       } else {
         allConst = false;
         break;
@@ -117,7 +117,7 @@ function collapseConstUnion(node: Record<string, JsonValue>): void {
     }
     if (!allConst) continue;
     delete node[combiner];
-    if (!("enum" in node)) node["enum"] = sortEnum(consts);
+    if (!("enum" in node)) node.enum = sortEnum(consts);
   }
 }
 

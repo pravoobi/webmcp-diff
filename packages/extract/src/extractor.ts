@@ -10,11 +10,19 @@ import {
   type RawRoute,
   type RawTool,
 } from "@webmcp-contract/contract";
-import { validateConfig, type ExtractConfig, type RouteConfig } from "./config.js";
+import { validateConfig, type ExtractConfig } from "./config.js";
 import { PROBE_SCRIPT, type ProbeResult } from "./page-probe.js";
 
 const require = createRequire(import.meta.url);
-const EXTRACTOR_VERSION = "0.1.0";
+
+/** Version of the nearest package.json — recorded in the contract's `environment`. */
+const EXTRACTOR_VERSION: string = (() => {
+  try {
+    return (require("../package.json") as { version?: string }).version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+})();
 
 let polyfillSourceCache: { source: string; version: string } | undefined;
 
@@ -106,7 +114,7 @@ export async function extractContract(
         );
         if (probe.surface !== "none") surface = probe.surface;
 
-        const state = routeConfig.setup ? routeConfig.state ?? "post-setup" : undefined;
+        const state = routeConfig.setup ? (routeConfig.state ?? "post-setup") : undefined;
         if (state) statesCaptured.add(state);
 
         routes.push({
@@ -116,7 +124,7 @@ export async function extractContract(
             .map((t): RawTool => {
               const isDeclarative = probe.declarativeNames.includes(t.name);
               const annotations: Record<string, unknown> = { ...t.annotations };
-              if (probe.autoSubmitNames.includes(t.name)) annotations["autoSubmit"] = true;
+              if (probe.autoSubmitNames.includes(t.name)) annotations.autoSubmit = true;
               return {
                 name: t.name,
                 description: t.description,

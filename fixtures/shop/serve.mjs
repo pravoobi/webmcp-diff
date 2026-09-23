@@ -30,7 +30,7 @@ export function createShopServer(version = VERSION) {
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
-      let pathname = url.pathname;
+      const pathname = url.pathname;
 
       if (pathname === "/polyfill.js") {
         const body = await readFile(polyfillIife, "utf8");
@@ -73,7 +73,10 @@ export function startShopServer(version = VERSION, port = 0) {
   });
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1] === fileURLToPath(import.meta.url)) {
+if (
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1] === fileURLToPath(import.meta.url)
+) {
   const { url } = await startShopServer(VERSION, PORT || 3000);
   console.log(`shop fixture (v${VERSION}) listening on ${url}`);
 }

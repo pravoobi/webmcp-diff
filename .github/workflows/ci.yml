@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +16,15 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test
       - run: pnpm build
+
+      - name: Verify packages pack cleanly
+        run: |
+          pnpm sync-license
+          for pkg in contract diff extract cli; do
+            ( cd "packages/$pkg" && npm pack --dry-run )
+          done

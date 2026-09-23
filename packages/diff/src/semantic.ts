@@ -19,10 +19,12 @@ Respond with a compact JSON object: {"behaviorChanged": boolean, "rationale": st
  * installed (an optional dependency) and an API key.
  */
 export function createClaudeSemanticJudge(opts: ClaudeSemanticOptions = {}): SemanticJudge {
-  const model = opts.model ?? process.env["WEBMCP_SEMANTIC_MODEL"] ?? "claude-opus-5";
-  const apiKey = opts.apiKey ?? process.env["ANTHROPIC_API_KEY"];
+  const model = opts.model ?? process.env.WEBMCP_SEMANTIC_MODEL ?? "claude-opus-5";
+  const apiKey = opts.apiKey ?? process.env.ANTHROPIC_API_KEY;
 
-  let clientPromise: Promise<{ messages: { create: (body: unknown) => Promise<unknown> } }> | undefined;
+  let clientPromise:
+    | Promise<{ messages: { create: (body: unknown) => Promise<unknown> } }>
+    | undefined;
   const getClient = async () => {
     if (!clientPromise) {
       clientPromise = (async () => {

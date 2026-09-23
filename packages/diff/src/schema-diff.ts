@@ -12,12 +12,14 @@ export interface SchemaChange {
 }
 
 function asObject(v: JsonValue | undefined): Record<string, JsonValue> | undefined {
-  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, JsonValue>) : undefined;
+  return v && typeof v === "object" && !Array.isArray(v)
+    ? (v as Record<string, JsonValue>)
+    : undefined;
 }
 
 function typeSet(schema: Record<string, JsonValue> | undefined): Set<string> {
   if (!schema) return new Set();
-  const t = schema["type"];
+  const t = schema.type;
   if (typeof t === "string") return new Set([t]);
   if (Array.isArray(t)) return new Set(t.filter((x): x is string => typeof x === "string"));
   return new Set();
@@ -25,13 +27,13 @@ function typeSet(schema: Record<string, JsonValue> | undefined): Set<string> {
 
 function enumValues(schema: Record<string, JsonValue> | undefined): JsonValue[] | undefined {
   if (!schema) return undefined;
-  const e = schema["enum"];
+  const e = schema.enum;
   return Array.isArray(e) ? e : undefined;
 }
 
 function requiredSet(schema: Record<string, JsonValue> | undefined): Set<string> {
   if (!schema) return new Set();
-  const r = schema["required"];
+  const r = schema.required;
   return new Set(Array.isArray(r) ? r.filter((x): x is string => typeof x === "string") : []);
 }
 
@@ -149,8 +151,8 @@ export function diffSchema(before: JsonSchema, after: JsonSchema, path = ""): Sc
   }
 
   // --- properties + required ---
-  const bProps = asObject(b["properties"]) ?? {};
-  const aProps = asObject(a["properties"]) ?? {};
+  const bProps = asObject(b.properties) ?? {};
+  const aProps = asObject(a.properties) ?? {};
   const bReq = requiredSet(b);
   const aReq = requiredSet(a);
   const allProps = new Set([...Object.keys(bProps), ...Object.keys(aProps)]);
@@ -197,9 +199,7 @@ export function diffSchema(before: JsonSchema, after: JsonSchema, path = ""): Sc
         message: `input '${childPath}' is no longer required`,
       });
     }
-    changes.push(
-      ...diffSchema(bProps[prop] as JsonSchema, aProps[prop] as JsonSchema, childPath),
-    );
+    changes.push(...diffSchema(bProps[prop] as JsonSchema, aProps[prop] as JsonSchema, childPath));
   }
 
   return changes;

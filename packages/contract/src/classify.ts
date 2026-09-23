@@ -37,9 +37,9 @@ export function classifyRisk(input: ClassifyInput, opts: ClassifyOptions = {}): 
   if (override) return override;
 
   const ann = input.annotations ?? {};
-  if (ann["destructiveHint"] === true) return "destructive";
-  if (ann["readOnlyHint"] === true) return "read";
-  if (ann["idempotentHint"] === true && ann["readOnlyHint"] !== false) {
+  if (ann.destructiveHint === true) return "destructive";
+  if (ann.readOnlyHint === true) return "read";
+  if (ann.idempotentHint === true && ann.readOnlyHint !== false) {
     // idempotent + not explicitly state-changing leans read/write; fall through.
   }
 

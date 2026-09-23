@@ -23,12 +23,21 @@ and reviewable.
 | [`@webmcp-contract/cli`](packages/cli) | `webmcp-contract snapshot \| diff \| check` |
 | [`action/`](action) | GitHub Action: snapshot on main, diff on PRs, comment the delta |
 
+## Install
+
+```bash
+npm i -D @webmcp-contract/cli
+npx playwright install chromium
+```
+
+Or run it without installing: `npx @webmcp-contract/cli snapshot ...`.
+
+> **Not on npm yet.** Until the first release is published, use it from a clone:
+> `pnpm install && pnpm build`, then `node packages/cli/dist/bin.js …` (or `pnpm cli …`).
+
 ## Quick start
 
 ```bash
-pnpm install
-pnpm exec playwright install chromium
-
 # 1. Describe your routes
 cat > webmcp.config.json <<'JSON'
 {
@@ -60,7 +69,7 @@ readable and two captures of the same build are **byte-identical**.
   "contractVersion": 1,
   "app": { "name": "dress-shop" },
   "capturedAt": "2026-01-01T00:00:00.000Z",
-  "environment": { "polyfill": "@mcp-b/webmcp-polyfill@5.1.0", "surface": "document.modelContext", "extractor": "0.1.0" },
+  "environment": { "polyfill": "@mcp-b/webmcp-polyfill@5.1.0", "surface": "document.modelContext", "extractor": "0.2.0" },
   "coverage": { "routesCaptured": ["/", "/cart", "/dresses"], "statesCaptured": ["cart-has-item"] },
   "routes": [
     {
@@ -101,8 +110,12 @@ not as an unrelated remove + add.
 ## Development
 
 ```bash
-pnpm test          # unit + integration (spins up the fixture shop under Playwright)
+pnpm install
+pnpm exec playwright install chromium
+
+pnpm lint          # biome (check); pnpm lint:fix / pnpm format to write
 pnpm typecheck
+pnpm test          # unit + integration (spins up the fixture shop under Playwright)
 pnpm build
 pnpm fixture       # serve the two-version fixture app locally
 ```
@@ -110,6 +123,12 @@ pnpm fixture       # serve the two-version fixture app locally
 The fixture in [`fixtures/shop`](fixtures/shop) is a tiny WebMCP storefront with a `v1` and a
 `v2` that differ by a scripted set of contract mutations — the integration test asserts every
 one is classified correctly end to end.
+
+## Releasing
+
+Versioning and publishing use [changesets](https://github.com/changesets/changesets). Add a
+changeset with every user-facing change (`pnpm changeset`); the four `@webmcp-contract/*`
+packages are a fixed group that release together. See [`RELEASING.md`](RELEASING.md).
 
 ## License
 

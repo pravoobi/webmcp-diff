@@ -14,9 +14,9 @@
       "cart-has-item"
     ]
   },
-  "digest": "37bae06b2deea8db3569708c716f2e81b1050233e0fef0904d4a3736863669ab",
+  "digest": "58cffdc7c02a39197a356c02003c115fc9ea55edfa7d80c7d7745563b28e7544",
   "environment": {
-    "extractor": "0.1.0",
+    "extractor": "0.2.0",
     "polyfill": "@mcp-b/webmcp-polyfill@5.1.0",
     "surface": "document.modelContext"
   },

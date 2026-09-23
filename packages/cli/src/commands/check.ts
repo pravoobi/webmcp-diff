@@ -1,30 +1,16 @@
 import { parseArgs } from "node:util";
-import { readFile, writeFile } from "node:fs/promises";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import {
-  parseContract,
-  serializeContract,
-  type Contract,
-} from "@webmcp-contract/contract";
-import { extractContract, type ExtractConfig } from "@webmcp-contract/extract";
-import {
-  diffContracts,
-  report,
-  createClaudeSemanticJudge,
-  type DiffOptions,
-} from "@webmcp-contract/diff";
+import { serializeContract } from "@webmcp-contract/contract";
 import { resolveFormat } from "../format.js";
-
-const exec = promisify(execFile);
+import { runContractCheck, BaselineError, type CheckOutcome } from "../check-core.js";
 
 const HELP = `webmcp-contract check — CI entry point
 
 Snapshots the running app and diffs it against the contract committed on <base>.
-Exit 1 on breaking / risk-increasing changes, 0 otherwise.
+Exit 1 on breaking / risk-increasing changes (or a missing baseline), 0 otherwise.
 
-  --base <ref>          Git ref to read the baseline contract from (default: origin/HEAD)
+  --base <ref>          Git ref holding the baseline contract (default: origin/HEAD, then HEAD)
   --config <file>       Extractor config for the snapshot (required)
   --contract <path>     Path to the committed contract (default: webmcp-contract.json)
   --format <fmt>        text | md | json | sarif  (default: text)
@@ -60,59 +46,42 @@ export async function runCheck(argv: string[]): Promise<number> {
     return 1;
   }
 
-  const contractPath = values.contract;
-  const base = values.base ?? "origin/HEAD";
+  const format = resolveFormat(values.format);
 
-  const baseline = await readBaselineContract(base, contractPath);
-  if (!baseline) {
-    console.error(
-      `no baseline contract at '${base}:${contractPath}'. ` +
-        `Commit a snapshot there first (webmcp-contract snapshot --config ... -o ${contractPath}).`,
-    );
-    return 1;
+  let outcome: CheckOutcome;
+  try {
+    outcome = await runContractCheck({
+      configPath: values.config,
+      ...(values.base ? { base: values.base } : {}),
+      contractPath: values.contract,
+      format,
+      riskAsWarning: values["risk-as-warning"],
+      semantic: values.semantic,
+      onProgress: (m) => console.error(`  ${m}`),
+    });
+  } catch (err) {
+    if (err instanceof BaselineError) {
+      console.error(`baseline: ${err.message}`);
+      return 1;
+    }
+    throw err;
   }
 
-  const configPath = path.resolve(values.config);
-  const config = JSON.parse(await readFile(configPath, "utf8")) as ExtractConfig;
-  const current: Contract = await extractContract(config, {
-    configDir: path.dirname(configPath),
-    onProgress: (m) => console.error(`  ${m}`),
-  });
-
-  const format = resolveFormat(values.format);
-  const options: DiffOptions = {
-    riskAsWarning: values["risk-as-warning"],
-    ...(values.semantic ? { semantic: createClaudeSemanticJudge() } : {}),
-  };
-
-  const result = await diffContracts(baseline, current, options);
-  const text = report(result, format);
   if (values.out) {
-    await writeFile(path.resolve(values.out), text);
+    await writeFile(path.resolve(values.out), outcome.reportText);
     console.error(`wrote ${values.out}`);
   } else {
-    process.stdout.write(text);
+    process.stdout.write(outcome.reportText);
   }
+  console.error(`compared against ${outcome.baseline.source}`);
 
   if (values.update) {
-    await writeFile(path.resolve(contractPath), serializeContract(current));
-    console.error(`updated ${contractPath}`);
+    await writeFile(path.resolve(values.contract), serializeContract(outcome.current));
+    console.error(`updated ${values.contract}`);
   }
 
-  return result.exitCode;
+  return outcome.result.exitCode;
 }
 
-async function readBaselineContract(ref: string, contractPath: string): Promise<Contract | undefined> {
-  const rel = contractPath.replace(/\\/g, "/");
-  try {
-    const { stdout } = await exec("git", ["show", `${ref}:${rel}`], { maxBuffer: 32 * 1024 * 1024 });
-    return parseContract(stdout, `${ref}:${rel}`);
-  } catch {
-    // ref or file not found — fall back to a local file if one exists
-    try {
-      return parseContract(await readFile(path.resolve(contractPath), "utf8"), contractPath);
-    } catch {
-      return undefined;
-    }
-  }
-}
+// Re-export for tests and programmatic use.
+export { runContractCheck, resolveBaseline, BaselineError } from "../check-core.js";

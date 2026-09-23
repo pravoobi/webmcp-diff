@@ -1,24 +1,62 @@
 {
   "name": "@webmcp-contract/cli",
-  "version": "0.1.0",
-  "description": "webmcp-contract — snapshot, diff, and check WebMCP tool contracts",
+  "version": "0.2.0",
+  "description": "webmcp-contract — snapshot, diff, and check the WebMCP tool contract a web app exposes to agents",
+  "keywords": [
+    "webmcp",
+    "mcp",
+    "agents",
+    "tool-contract",
+    "cli",
+    "ci",
+    "diff",
+    "openapi-diff"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pravoobi/webmcp-diff.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/pravoobi/webmcp-diff/tree/main/packages/cli#readme",
+  "bugs": "https://github.com/pravoobi/webmcp-diff/issues",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "webmcp-contract": "./dist/bin.js"
+  },
+  "exports": {
+    "./check": "./src/check-core.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      "./check": {
+        "types": "./dist/check-core.d.ts",
+        "import": "./dist/check-core.js"
+      }
+    }
   },
   "scripts": {
     "build": "tsup"
   },
   "dependencies": {
-    "@webmcp-contract/contract": "workspace:*",
-    "@webmcp-contract/diff": "workspace:*",
-    "@webmcp-contract/extract": "workspace:*",
     "@mcp-b/webmcp-polyfill": "5.1.0",
     "playwright": "^1.49.1"
   },
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.123.0"
   },
-  "files": ["dist"]
+  "devDependencies": {
+    "@webmcp-contract/contract": "workspace:*",
+    "@webmcp-contract/diff": "workspace:*",
+    "@webmcp-contract/extract": "workspace:*"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
 }

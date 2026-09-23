@@ -20,7 +20,10 @@ const baseCapture = (): RawCapture => ({
           name: "b_tool",
           description: "does b",
           source: "imperative",
-          inputSchema: { type: "object", properties: { y: { type: "string" }, x: { type: "number" } } },
+          inputSchema: {
+            type: "object",
+            properties: { y: { type: "string" }, x: { type: "number" } },
+          },
         },
         {
           name: "a_tool",
@@ -42,8 +45,8 @@ describe("canonicalizeSchema", () => {
       properties: { size: { $ref: "#/$defs/size" } },
       $defs: { size: { type: "string", enum: ["m", "l", "s"] } },
     });
-    expect(out["$schema"]).toBeUndefined();
-    expect((out["properties"] as any).size).toEqual({ type: "string", enum: ["l", "m", "s"] });
+    expect(out.$schema).toBeUndefined();
+    expect((out.properties as any).size).toEqual({ type: "string", enum: ["l", "m", "s"] });
   });
 
   it("normalizes required (sort, dedupe, drop empty)", () => {
@@ -52,14 +55,14 @@ describe("canonicalizeSchema", () => {
       properties: { a: {}, b: {} },
       required: ["b", "a", "b"],
     });
-    expect(out["required"]).toEqual(["a", "b"]);
+    expect(out.required).toEqual(["a", "b"]);
     const empty = canonicalizeSchema({ type: "object", properties: {}, required: [] });
-    expect(empty["required"]).toBeUndefined();
+    expect(empty.required).toBeUndefined();
   });
 
   it("collapses single-element type arrays", () => {
-    expect(canonicalizeSchema({ type: ["string"] })["type"]).toBe("string");
-    expect(canonicalizeSchema({ type: ["string", "number"] })["type"]).toEqual(["number", "string"]);
+    expect(canonicalizeSchema({ type: ["string"] }).type).toBe("string");
+    expect(canonicalizeSchema({ type: ["string", "number"] }).type).toEqual(["number", "string"]);
   });
 
   it("defaults missing schema to an empty object schema", () => {

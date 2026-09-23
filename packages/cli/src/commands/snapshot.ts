@@ -49,8 +49,14 @@ export async function runSnapshot(argv: string[]): Promise<number> {
     let routes: ExtractConfig["routes"];
     let embedded: Partial<ExtractConfig> = {};
     if (Array.isArray(routesRaw)) {
-      routes = routesRaw.map((r) => (typeof r === "string" ? { path: r } : (r as ExtractConfig["routes"][number])));
-    } else if (routesRaw && typeof routesRaw === "object" && Array.isArray((routesRaw as ExtractConfig).routes)) {
+      routes = routesRaw.map((r) =>
+        typeof r === "string" ? { path: r } : (r as ExtractConfig["routes"][number]),
+      );
+    } else if (
+      routesRaw &&
+      typeof routesRaw === "object" &&
+      Array.isArray((routesRaw as ExtractConfig).routes)
+    ) {
       embedded = routesRaw as Partial<ExtractConfig>;
       routes = (routesRaw as ExtractConfig).routes;
     } else {

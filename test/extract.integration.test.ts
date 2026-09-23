@@ -7,7 +7,7 @@ import { diffContracts } from "@webmcp-contract/diff";
 // @ts-expect-error — plain .mjs fixture helper, no types
 import { startShopServer } from "../fixtures/shop/serve.mjs";
 
-const fixtureDir = path.dirname(fileURLToPath(import.meta.url)).replace(/test$/, "") + "fixtures/shop";
+const fixtureDir = `${path.dirname(fileURLToPath(import.meta.url)).replace(/test$/, "")}fixtures/shop`;
 const CAPTURED_AT = "2026-01-01T00:00:00.000Z";
 
 interface Server {
@@ -57,15 +57,15 @@ describe("extractor + fixture shop (integration)", () => {
       contract.routes.flatMap((r) => r.tools.map((t) => [t.name, { ...t, route: r.path }])),
     );
 
-    expect(tools["get_shop_info"]?.risk).toBe("read");
-    expect(tools["search_dresses"]?.source).toBe("imperative");
-    expect(tools["search_dresses"]?.inputSchema).toMatchObject({ required: ["query"] });
-    expect(tools["filter_dresses"]?.source).toBe("declarative-form");
-    expect(tools["checkout"]?.risk).toBe("destructive");
+    expect(tools.get_shop_info?.risk).toBe("read");
+    expect(tools.search_dresses?.source).toBe("imperative");
+    expect(tools.search_dresses?.inputSchema).toMatchObject({ required: ["query"] });
+    expect(tools.filter_dresses?.source).toBe("declarative-form");
+    expect(tools.checkout?.risk).toBe("destructive");
 
     // apply_promo_code only shows up after the cart-has-item setup
-    expect(tools["apply_promo_code"]?.lifecycle).toBe("conditional");
-    expect(tools["apply_promo_code"]?.states).toEqual(["cart-has-item"]);
+    expect(tools.apply_promo_code?.lifecycle).toBe("conditional");
+    expect(tools.apply_promo_code?.states).toEqual(["cart-has-item"]);
 
     expect(contract.coverage.statesCaptured).toEqual(["cart-has-item"]);
   }, 60_000);

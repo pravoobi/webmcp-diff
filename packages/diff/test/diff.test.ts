@@ -44,7 +44,10 @@ describe("diffContracts — breaking changes", () => {
   it("flags an added required input", async () => {
     const tightened: RawTool = {
       ...search,
-      inputSchema: { ...(search.inputSchema as object), required: ["query", "size"] } as RawTool["inputSchema"],
+      inputSchema: {
+        ...(search.inputSchema as object),
+        required: ["query", "size"],
+      } as RawTool["inputSchema"],
     };
     const { codes } = await codesFor([search], [tightened]);
     expect(codes).toContain("input.required-added");
@@ -98,7 +101,11 @@ describe("diffContracts — risk-increasing changes", () => {
   });
 
   it("--risk-as-warning lets a risk-only diff pass", async () => {
-    const del: RawTool = { name: "purchase_now", description: "Buy immediately", source: "imperative" };
+    const del: RawTool = {
+      name: "purchase_now",
+      description: "Buy immediately",
+      source: "imperative",
+    };
     const result = await diffContracts(contract([search]), contract([search, del]), {
       riskAsWarning: true,
     });
@@ -107,7 +114,11 @@ describe("diffContracts — risk-increasing changes", () => {
   });
 
   it("flags toolautosubmit being added to a form tool", async () => {
-    const form: RawTool = { name: "filter", description: "Filter list", source: "declarative-form" };
+    const form: RawTool = {
+      name: "filter",
+      description: "Filter list",
+      source: "declarative-form",
+    };
     const formAuto: RawTool = { ...form, annotations: { autoSubmit: true } };
     const { codes } = await codesFor([form], [formAuto]);
     expect(codes).toContain("form.autosubmit-added");

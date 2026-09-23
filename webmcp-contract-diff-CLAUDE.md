@@ -115,8 +115,10 @@ webmcp-contract check --base main       # snapshot current, diff vs contract com
 
 ## Implementation status
 
-pnpm monorepo (`packages/{contract,extract,diff,cli}`, `fixtures/shop`, `action/`). `pnpm test`,
-`pnpm typecheck`, `pnpm build` all green; see `README.md` for usage.
+pnpm monorepo (`packages/{contract,extract,diff,cli}`, `fixtures/shop`, `action/`). `pnpm lint`
+(Biome), `pnpm typecheck`, `pnpm test` (40), `pnpm build` all green; see `README.md` for usage,
+`CONTRIBUTING.md` / `RELEASING.md` for workflow. Versioning via changesets (the four packages are
+a fixed group); `.github/workflows/{ci,release}.yml`.
 
 - **M1 — done.** `@webmcp-contract/contract` (canonicalization, risk classify, digest,
   serialize/parse-with-digest-check) and `@webmcp-contract/extract` (Playwright + injected
@@ -127,9 +129,17 @@ pnpm monorepo (`packages/{contract,extract,diff,cli}`, `fixtures/shop`, `action/
   (required/removed/type-narrowed/enum), annotation + risk + lifecycle + source diff, rename
   detection (schema+name similarity), coverage-aware route handling. Reporters: text, markdown
   (grouped, collapsible before/after), json, sarif.
-- **M3 — mostly done.** CLI `snapshot|diff|check` (`check` reads the baseline via
-  `git show <ref>:<path>`). `action/action.yml` composite Action: start app → `check` → PR comment
-  (upsert) → optional contract refresh on push. Not yet: exercised against a real git repo; npm publish.
+- **M3 — mostly done.** CLI `snapshot|diff|check`. `check` core is `packages/cli/src/check-core.ts`
+  (`runContractCheck` / `resolveBaseline` / `BaselineError`), exported at `@webmcp-contract/cli/check`;
+  it reads the baseline with `git show <ref>:./<path>` (cwd-relative, works from subdirs) and treats
+  an explicit `--base` failure as fatal rather than silently comparing the snapshot to itself.
+  `test/check.integration.test.ts` exercises it against a real temp git repo (mutation classification,
+  clean build, missing ref, uncommitted path, non-repo). `action/action.yml` composite Action:
+  fetch base ref → start app → `check` → PR comment (upsert via `gh api`) → optional contract refresh
+  on push. Release automation is wired (`release.yml` + changesets, moves `v0`/`v0.x`/`v0.x.y` tags).
+  Repo is now `pravoobi/webmcp-diff`; `@webmcp-contract` npm scope is unclaimed and kept as-is.
+  **Still blocked on the maintainer:** claim the `@webmcp-contract` npm org and add `NPM_TOKEN` —
+  then a push to `main` publishes (see `RELEASING.md`).
 - **M4 — partial.** Rename detection done. `--semantic` implemented
   (`createClaudeSemanticJudge`, `@anthropic-ai/sdk`, default model `claude-opus-5`, runs only on
   changed descriptions). Not done: cross-release archive, dogfood on the try-on app.

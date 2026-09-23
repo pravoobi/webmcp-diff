@@ -43,7 +43,7 @@ export interface RawCapture {
 /** Normalize a route path: ensure a leading slash, strip a trailing slash (except root). */
 export function normalizePath(path: string): string {
   let p = path.trim();
-  if (!p.startsWith("/")) p = "/" + p;
+  if (!p.startsWith("/")) p = `/${p}`;
   p = p.replace(/\/+/g, "/");
   if (p.length > 1) p = p.replace(/\/$/, "");
   return p;
@@ -51,7 +51,10 @@ export function normalizePath(path: string): string {
 
 function buildTool(raw: RawTool, overrides: Record<string, ToolRisk> | undefined): ContractTool {
   const inputSchema = canonicalizeSchema(raw.inputSchema);
-  const annotations = sortKeysDeep((raw.annotations ?? {}) as JsonValue) as Record<string, JsonValue>;
+  const annotations = sortKeysDeep((raw.annotations ?? {}) as JsonValue) as Record<
+    string,
+    JsonValue
+  >;
   const description = (raw.description ?? "").trim();
   const risk = classifyRisk({ name: raw.name, description, annotations }, { overrides });
   const states = raw.states && raw.states.length > 0 ? [...new Set(raw.states)].sort() : undefined;

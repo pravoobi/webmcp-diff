@@ -134,8 +134,8 @@ async function diffTool(
   }
 
   // --- annotations: readOnlyHint ---
-  const oldRO = oldTool.annotations["readOnlyHint"];
-  const newRO = newTool.annotations["readOnlyHint"];
+  const oldRO = oldTool.annotations.readOnlyHint;
+  const newRO = newTool.annotations.readOnlyHint;
   if (oldRO === true && newRO !== true) {
     changes.push({
       severity: "breaking",
@@ -157,7 +157,10 @@ async function diffTool(
   }
 
   // --- annotations: destructiveHint ---
-  if (oldTool.annotations["destructiveHint"] !== true && newTool.annotations["destructiveHint"] === true) {
+  if (
+    oldTool.annotations.destructiveHint !== true &&
+    newTool.annotations.destructiveHint === true
+  ) {
     changes.push({
       severity: "risk",
       code: "annotation.destructive-added",
@@ -168,8 +171,8 @@ async function diffTool(
   }
 
   // --- declarative autosubmit ---
-  const oldAuto = oldTool.annotations["autoSubmit"] === true;
-  const newAuto = newTool.annotations["autoSubmit"] === true;
+  const oldAuto = oldTool.annotations.autoSubmit === true;
+  const newAuto = newTool.annotations.autoSubmit === true;
   if (!oldAuto && newAuto) {
     changes.push({
       severity: "risk",
@@ -393,7 +396,8 @@ function similarity(a: ContractTool, b: ContractTool): number {
     canonicalJson(a.inputSchema as JsonValue) === canonicalJson(b.inputSchema as JsonValue);
   const schemaScore = schemaEqual ? 1 : jaccardTokens(a.inputSchema, b.inputSchema);
   const nameScore = diceCoefficient(a.name, b.name);
-  const descScore = a.description && b.description ? diceCoefficient(a.description, b.description) : 0;
+  const descScore =
+    a.description && b.description ? diceCoefficient(a.description, b.description) : 0;
   return 0.6 * schemaScore + 0.25 * nameScore + 0.15 * descScore;
 }
 

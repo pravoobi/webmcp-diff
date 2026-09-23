@@ -1,14 +1,35 @@
 {
   "name": "@webmcp-contract/diff",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Structural + semantic diff engine and reporters for WebMCP contracts",
+  "keywords": [
+    "webmcp",
+    "mcp",
+    "agents",
+    "tool-contract",
+    "diff",
+    "breaking-changes",
+    "sarif"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pravoobi/webmcp-diff.git",
+    "directory": "packages/diff"
+  },
+  "homepage": "https://github.com/pravoobi/webmcp-diff/tree/main/packages/diff#readme",
+  "bugs": "https://github.com/pravoobi/webmcp-diff/issues",
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
   "publishConfig": {
+    "access": "public",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
@@ -24,5 +45,12 @@
   "dependencies": {
     "@webmcp-contract/contract": "workspace:*"
   },
-  "files": ["dist"]
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.123.0"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
 }
