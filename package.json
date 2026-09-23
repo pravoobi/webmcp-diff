@@ -12,7 +12,7 @@
   "homepage": "https://github.com/pravoobi/webmcp-diff#readme",
   "bugs": "https://github.com/pravoobi/webmcp-diff/issues",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   },
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" run build",
