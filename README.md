@@ -19,7 +19,7 @@ and reviewable.
 | --- | --- |
 | [`@webmcp-contract/contract`](packages/contract) | Contract format, schema canonicalization, risk classification, digesting |
 | [`@webmcp-contract/extract`](packages/extract) | Playwright extractor: crawls routes with a WebMCP polyfill injected, captures the tool list |
-| [`@webmcp-contract/diff`](packages/diff) | Structural + semantic diff engine and reporters (text, markdown, json, sarif) |
+| [`@webmcp-contract/diff`](packages/diff) | Structural + semantic diff engine and reporters (text, markdown, json, sarif, html) |
 | [`@webmcp-contract/cli`](packages/cli) | `webmcp-contract snapshot \| diff \| check` |
 | [`action/`](action) | GitHub Action: snapshot on main, diff on PRs, comment the delta |
 

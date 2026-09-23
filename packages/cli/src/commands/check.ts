@@ -13,7 +13,7 @@ Exit 1 on breaking / risk-increasing changes (or a missing baseline), 0 otherwis
   --base <ref>          Git ref holding the baseline contract (default: origin/HEAD, then HEAD)
   --config <file>       Extractor config for the snapshot (required)
   --contract <path>     Path to the committed contract (default: webmcp-contract.json)
-  --format <fmt>        text | md | json | sarif  (default: text)
+  --format <fmt>        text | md | json | sarif | html  (default: text)
   -o, --out <file>      Write the report here (default: stdout)
   --semantic            LLM-assisted description-drift detection
   --risk-as-warning     Don't fail on risk-increasing-only changes

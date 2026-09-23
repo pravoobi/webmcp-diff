@@ -7,6 +7,6 @@ export function resolveFormat(
 ): ReportFormat {
   if (!value) return fallback;
   const v = value === "md" ? "markdown" : value;
-  if (v === "text" || v === "markdown" || v === "json" || v === "sarif") return v;
-  throw new Error(`unknown --format '${value}' (expected text | md | json | sarif)`);
+  if (v === "text" || v === "markdown" || v === "json" || v === "sarif" || v === "html") return v;
+  throw new Error(`unknown --format '${value}' (expected text | md | json | sarif | html)`);
 }

@@ -10,5 +10,6 @@ export {
   textReport,
   markdownReport,
   sarifReport,
+  htmlReport,
   type ReportFormat,
 } from "./reporters.js";

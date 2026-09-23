@@ -55,4 +55,28 @@ describe("reporters", () => {
     const result = await diffContracts(contract([checkout]), contract([checkout]));
     expect(JSON.parse(report(result, "json"))).toMatchObject({ exitCode: 0, changes: [] });
   });
+
+  it("html report is a self-contained page with the verdict, groups, and escaped content", async () => {
+    const evil: RawTool = {
+      name: "checkout",
+      description: 'Place the order <script>alert(1)</script> & "quote"',
+      source: "imperative",
+    };
+    const result = await diffContracts(contract([checkout]), contract([evil]));
+    const html = report(result, "html");
+    expect(html).toContain("<!doctype html>");
+    expect(html).toContain("WebMCP contract diff");
+    expect(html).toContain("before / after");
+    // description change never reaches raw <script> in the output...
+    expect(html).not.toContain("<script>alert(1)</script>");
+    // ...it's HTML-escaped instead.
+    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+  });
+
+  it("html report renders a clean empty state when there are no changes", async () => {
+    const result = await diffContracts(contract([checkout]), contract([checkout]));
+    const html = report(result, "html");
+    expect(html).toContain("No contract changes.");
+    expect(html).not.toContain('class="pills"');
+  });
 });

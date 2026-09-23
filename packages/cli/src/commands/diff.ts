@@ -12,7 +12,7 @@ import { resolveFormat } from "../format.js";
 
 const HELP = `webmcp-contract diff <old.json> <new.json>
 
-  --format <fmt>        text | md | json | sarif   (default: text)
+  --format <fmt>        text | md | json | sarif | html   (default: text)
   -o, --out <file>      Write the report here (default: stdout)
   --semantic            LLM-assisted description-drift detection (needs ANTHROPIC_API_KEY)
   --risk-as-warning     Don't fail (exit 0) on risk-increasing-only changes

@@ -10,7 +10,7 @@ A page's registered tools form its Tool Contract — the machine-readable menu o
 
 1. `packages/extract` — Playwright-based extractor: crawls configured routes, captures registered tools into a canonical contract document
 2. `packages/contract` — contract format, canonicalization, semver-style classification of changes
-3. `packages/diff` — structural + semantic diff engine, reporters (text, markdown, json, sarif)
+3. `packages/diff` — structural + semantic diff engine, reporters (text, markdown, json, sarif, html)
 4. `packages/cli` — `webmcp-contract snapshot|diff|check`
 5. `action/` — GitHub Action: snapshot on main, diff on PRs, comment the delta
 6. Later: tiny web viewer (static HTML) for browsing/sharing a contract or a diff
@@ -79,7 +79,7 @@ Change classification (drives exit codes):
 
 ```
 webmcp-contract snapshot --url http://localhost:3000 --routes routes.json -o contract.json
-webmcp-contract diff old.json new.json [--format md|json|sarif] [--semantic]
+webmcp-contract diff old.json new.json [--format md|json|sarif|html] [--semantic]
 webmcp-contract check --base main       # snapshot current, diff vs contract committed on base branch
 ```
 

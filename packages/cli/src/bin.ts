@@ -10,7 +10,7 @@ const USAGE = `webmcp-contract — snapshot and diff the WebMCP tool contract a 
 Usage:
   webmcp-contract snapshot --config <file> [-o contract.json] [--captured-at <iso>]
   webmcp-contract snapshot --url <baseUrl> --routes <file> [--app <name>] [-o contract.json]
-  webmcp-contract diff <old.json> <new.json> [--format text|md|json|sarif] [-o <file>]
+  webmcp-contract diff <old.json> <new.json> [--format text|md|json|sarif|html] [-o <file>]
                                              [--semantic] [--risk-as-warning]
   webmcp-contract check --base <ref> --config <file> [--contract <path>] [--format ...]
 
