@@ -142,9 +142,16 @@ a fixed group); `.github/workflows/{ci,release}.yml`.
   is tagged and usable. **Open:** the release workflow's `NPM_TOKEN` is a token type that still requires
   interactive npm OTP, so CI-driven publishes on future changesets will fail until it's swapped for an
   npm Automation token (see `RELEASING.md`).
-- **M4 — partial.** Rename detection done. `--semantic` implemented
+- **M4 — mostly done.** Rename detection done. `--semantic` implemented
   (`createClaudeSemanticJudge`, `@anthropic-ai/sdk`, default model `claude-opus-5`, runs only on
-  changed descriptions). Not done: cross-release archive, dogfood on the try-on app.
+  changed descriptions). Dogfooded 2026-09-23 against a real WebMCP app (`try-on`): `snapshot`
+  correctly captured all 5 real tools; `diff`/`check` correctly classified real breaking edits
+  (readOnlyHint drop, required-input-added) with exit code 1, confirmed against the published npm
+  package via `npx`, not just the local build. Testing `action/action.yml` itself via `act` (local
+  GitHub Actions runner) surfaced and fixed a real bug: the "Diff contract" / "Comment on PR" steps
+  crashed on `cat`ing a report that doesn't exist when `check` hits a `BaselineError` (the standard
+  first-time-setup state) — fixed in `aeadfda`, `v0`/`v0.2` moved, `v0.2.1` cut. Not done:
+  cross-release archive.
 
 Fixture `fixtures/shop` has a `v1` and `v2` differing by scripted mutations (readOnlyHint flip,
 tightened schema, enum removal, form `toolautosubmit`, tool rename, new destructive tool); the
