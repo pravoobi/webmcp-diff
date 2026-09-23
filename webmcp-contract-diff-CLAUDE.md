@@ -137,9 +137,11 @@ a fixed group); `.github/workflows/{ci,release}.yml`.
   clean build, missing ref, uncommitted path, non-repo). `action/action.yml` composite Action:
   fetch base ref → start app → `check` → PR comment (upsert via `gh api`) → optional contract refresh
   on push. Release automation is wired (`release.yml` + changesets, moves `v0`/`v0.x`/`v0.x.y` tags).
-  Repo is now `pravoobi/webmcp-diff`; `@webmcp-contract` npm scope is unclaimed and kept as-is.
-  **Still blocked on the maintainer:** claim the `@webmcp-contract` npm org and add `NPM_TOKEN` —
-  then a push to `main` publishes (see `RELEASING.md`).
+  Repo is `pravoobi/webmcp-diff`. **Published** — `@webmcp-contract/{contract,extract,diff,cli}@0.2.0`
+  are live on npm (manual first publish 2026-09-23; org + `NPM_TOKEN` set up); `pravoobi/webmcp-diff/action@v0`
+  is tagged and usable. **Open:** the release workflow's `NPM_TOKEN` is a token type that still requires
+  interactive npm OTP, so CI-driven publishes on future changesets will fail until it's swapped for an
+  npm Automation token (see `RELEASING.md`).
 - **M4 — partial.** Rename detection done. `--semantic` implemented
   (`createClaudeSemanticJudge`, `@anthropic-ai/sdk`, default model `claude-opus-5`, runs only on
   changed descriptions). Not done: cross-release archive, dogfood on the try-on app.

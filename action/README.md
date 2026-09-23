@@ -3,9 +3,6 @@
 Snapshots the WebMCP tool contract your web app exposes to agents and fails the PR
 on breaking or risk-increasing changes.
 
-> The action runs `npx @webmcp-contract/cli`, so that package must be published
-> (see the repo's release workflow) or pinned to a version you host.
-
 ## Usage
 
 Commit a baseline contract to your repo first:

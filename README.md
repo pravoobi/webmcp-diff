@@ -32,9 +32,6 @@ npx playwright install chromium
 
 Or run it without installing: `npx @webmcp-contract/cli snapshot ...`.
 
-> **Not on npm yet.** Until the first release is published, use it from a clone:
-> `pnpm install && pnpm build`, then `node packages/cli/dist/bin.js …` (or `pnpm cli …`).
-
 ## Quick start
 
 ```bash
