@@ -1,6 +1,6 @@
 {
   "name": "@webmcp-contract/contract",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "WebMCP tool contract format, canonicalization, and risk classification",
   "keywords": [
     "webmcp",
