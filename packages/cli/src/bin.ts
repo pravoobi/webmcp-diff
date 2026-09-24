@@ -2,6 +2,7 @@
 import { runSnapshot } from "./commands/snapshot.js";
 import { runDiff } from "./commands/diff.js";
 import { runCheck } from "./commands/check.js";
+import { runArchive } from "./commands/archive.js";
 
 const VERSION = "0.1.0";
 
@@ -13,11 +14,13 @@ Usage:
   webmcp-contract diff <old.json> <new.json> [--format text|md|json|sarif|html] [-o <file>]
                                              [--semantic] [--risk-as-warning]
   webmcp-contract check --base <ref> --config <file> [--contract <path>] [--format ...]
+  webmcp-contract archive <contract.json> --dir <path> --label <label>
 
 Commands:
   snapshot   Crawl routes with a WebMCP polyfill injected and write a canonical contract.
   diff       Compare two contract files. Exit 1 on breaking / risk-increasing changes.
   check      Snapshot the running app, diff against the contract committed on <ref>. CI entry point.
+  archive    Add a contract snapshot to a cross-release archive for later diffing.
 
 Run 'webmcp-contract <command> --help' for command-specific options.`;
 
@@ -30,6 +33,8 @@ async function main(argv: string[]): Promise<number> {
       return runDiff(rest);
     case "check":
       return runCheck(rest);
+    case "archive":
+      return runArchive(rest);
     case "-h":
     case "--help":
     case undefined:

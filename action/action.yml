@@ -41,6 +41,14 @@ inputs:
     description: "On a push to the default branch, rewrite the committed contract and commit it back (needs contents: write)."
     required: false
     default: "false"
+  archive:
+    description: "With update-on-push, also append the refreshed contract to a cross-release archive (one <commit-sha>.json per changed snapshot plus an index.json), so any two releases can be diffed later."
+    required: false
+    default: "false"
+  archive-path:
+    description: "Directory holding the cross-release archive."
+    required: false
+    default: ".webmcp-contract-archive"
   cli-version:
     description: "Version (npm dist-tag or semver) of @webmcp-contract/cli to run."
     required: false
@@ -170,10 +178,19 @@ runs:
       run: |
         npx --yes "@webmcp-contract/cli@${{ inputs.cli-version }}" snapshot \
           --config "${{ inputs.config }}" -o "${{ inputs.contract-path }}" --quiet
-        if ! git diff --quiet -- "${{ inputs.contract-path }}"; then
+
+        paths="${{ inputs.contract-path }}"
+        if [ "${{ inputs.archive }}" = "true" ]; then
+          label="${GITHUB_SHA:0:12}"
+          npx --yes "@webmcp-contract/cli@${{ inputs.cli-version }}" archive \
+            "${{ inputs.contract-path }}" --dir "${{ inputs.archive-path }}" --label "$label"
+          paths="$paths ${{ inputs.archive-path }}"
+        fi
+
+        if [ -n "$(git status --porcelain -- $paths)" ]; then
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${{ inputs.contract-path }}"
+          git add $paths
           git commit -m "chore: refresh webmcp contract [skip ci]"
           git push
         fi

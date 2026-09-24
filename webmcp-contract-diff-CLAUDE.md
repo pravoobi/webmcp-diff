@@ -88,7 +88,9 @@ webmcp-contract check --base main       # snapshot current, diff vs contract com
 ## GitHub Action
 
 - On PR: build+serve, `check`, post a markdown comment: summary table + per-change details (before/after schema fragments), collapsible
-- On main: refresh committed contract (or store as artifact/release asset per release tag for cross-release diffs)
+- On main: refresh committed contract; optionally also archive it (`archive: true`) — one
+  `<commit-sha>.json` per changed snapshot, committed in-repo under `archive-path`, plus an
+  `index.json` manifest, so any two releases can be diffed later via the ordinary `diff` command
 
 ## Testing
 
@@ -116,7 +118,7 @@ webmcp-contract check --base main       # snapshot current, diff vs contract com
 ## Implementation status
 
 pnpm monorepo (`packages/{contract,extract,diff,cli}`, `fixtures/shop`, `action/`, `viewer/`).
-`pnpm lint` (Biome), `pnpm typecheck`, `pnpm test` (42), `pnpm build` all green; see `README.md`
+`pnpm lint` (Biome), `pnpm typecheck`, `pnpm test` (47), `pnpm build` all green; see `README.md`
 for usage, `CONTRIBUTING.md` / `RELEASING.md` for workflow. Versioning via changesets (the four
 packages are a fixed group); `.github/workflows/{ci,release}.yml`.
 
@@ -142,7 +144,7 @@ packages are a fixed group); `.github/workflows/{ci,release}.yml`.
   is tagged and usable. **Open:** the release workflow's `NPM_TOKEN` is a token type that still requires
   interactive npm OTP, so CI-driven publishes on future changesets will fail until it's swapped for an
   npm Automation token (see `RELEASING.md`).
-- **M4 — mostly done.** Rename detection done. `--semantic` implemented
+- **M4 — done.** Rename detection done. `--semantic` implemented
   (`createClaudeSemanticJudge`, `@anthropic-ai/sdk`, default model `claude-opus-5`, runs only on
   changed descriptions). Dogfooded 2026-09-23 against a real WebMCP app (`try-on`): `snapshot`
   correctly captured all 5 real tools; `diff`/`check` correctly classified real breaking edits
@@ -150,8 +152,21 @@ packages are a fixed group); `.github/workflows/{ci,release}.yml`.
   package via `npx`, not just the local build. Testing `action/action.yml` itself via `act` (local
   GitHub Actions runner) surfaced and fixed a real bug: the "Diff contract" / "Comment on PR" steps
   crashed on `cat`ing a report that doesn't exist when `check` hits a `BaselineError` (the standard
-  first-time-setup state) — fixed in `aeadfda`, `v0`/`v0.2` moved, `v0.2.1` cut. Not done:
-  cross-release archive.
+  first-time-setup state) — fixed in `aeadfda`, `v0`/`v0.2` moved, `v0.2.1` cut.
+  Cross-release archive: `webmcp-contract archive <contract.json> --dir <path> --label <label>`
+  (`packages/cli/src/archive-core.ts`) writes `<label>.json` + an `index.json` manifest, is a
+  no-op when the digest matches the archive's most recent entry, and overwrites in place on a
+  repeated label. Storage is a committed in-repo directory (not release assets — no extra API
+  calls, works offline, diffable via plain `webmcp-contract diff` against two archived files —
+  zero new diff-engine code needed). Wired into `action/action.yml`'s existing "Refresh committed
+  contract" step behind `archive`/`archive-path` inputs, keyed by short commit SHA, triggered on
+  every push to the default branch that changes the contract (same condition as
+  `update-on-push`). That step's change-detection also moved from `git diff --quiet` (which missed
+  a brand-new untracked file) to `git status --porcelain`, fixing a latent bug in the pre-existing
+  `update-on-push` path along the way. Unit-tested (`packages/cli/test/archive-core.test.ts`);
+  the Action-side bash (git status/add over both paths) was verified in isolation against a
+  throwaway repo, not via a full `act` run (that step performs a real `git push`, which is unsafe
+  to rehearse against any real remote).
 - **Deliverable #6 — done.** `viewer/index.html`: single static file, no build step, no
   dependencies. Auto-detects a contract vs. a `diff --format json` result and renders either a
   per-route tool browser (risk badges, expandable schema/annotations) or the same diff layout as

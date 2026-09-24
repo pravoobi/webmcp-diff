@@ -60,8 +60,28 @@ jobs:
 | `risk-as-warning` | `false` | Don't fail on risk-increasing-only changes. |
 | `comment` | `true` | Post/update the markdown diff as a PR comment. |
 | `update-on-push` | `false` | On push to the default branch, refresh and commit the contract. |
+| `archive` | `false` | With `update-on-push`, also append the refreshed contract to a cross-release archive. |
+| `archive-path` | `.webmcp-contract-archive` | Directory holding the cross-release archive. |
 | `cli-version` | `latest` | Version of `@webmcp-contract/cli` to run. |
 | `working-directory` | `.` | Directory to run in. |
+
+## Cross-release archive
+
+With `update-on-push: true` and `archive: true`, every push to the default branch that
+actually changes the tool contract also gets a snapshot saved to
+`<archive-path>/<commit-sha>.json`, indexed in `<archive-path>/index.json`. Pushes that
+don't change the contract are a no-op — the archive only grows when something real
+happened.
+
+Diffing any two past releases later is then just the ordinary `diff` command against two
+archived files — no new tooling, no need to check out old commits:
+
+```bash
+webmcp-contract diff .webmcp-contract-archive/<old-sha>.json .webmcp-contract-archive/<new-sha>.json --format html
+```
+
+Or open one archived contract, or a diff between two, in [`viewer/`](../viewer) — point it
+at a raw URL to the file (`index.html?url=<raw-github-url>`) for a shareable link.
 
 ## Outputs
 

@@ -20,7 +20,7 @@ and reviewable.
 | [`@webmcp-contract/contract`](packages/contract) | Contract format, schema canonicalization, risk classification, digesting |
 | [`@webmcp-contract/extract`](packages/extract) | Playwright extractor: crawls routes with a WebMCP polyfill injected, captures the tool list |
 | [`@webmcp-contract/diff`](packages/diff) | Structural + semantic diff engine and reporters (text, markdown, json, sarif, html) |
-| [`@webmcp-contract/cli`](packages/cli) | `webmcp-contract snapshot \| diff \| check` |
+| [`@webmcp-contract/cli`](packages/cli) | `webmcp-contract snapshot \| diff \| check \| archive` |
 | [`action/`](action) | GitHub Action: snapshot on main, diff on PRs, comment the delta |
 | [`viewer/`](viewer) | Static, dependency-free HTML page for browsing/sharing a contract or a diff |
 
@@ -92,6 +92,26 @@ readable and two captures of the same build are **byte-identical**.
 
 `coverage` records what the capture actually covered, so "tool absent from the diff" is
 distinguishable from "tool absent from the capture".
+
+## Cross-release archive
+
+Keep one contract snapshot per release so any two releases can be diffed later, not just
+the current build against the last commit:
+
+```bash
+webmcp-contract archive webmcp-contract.json --dir .webmcp-contract-archive --label v1.4.0
+```
+
+A no-op when nothing changed since the last archived snapshot, so the archive only grows
+when the contract actually did. Diffing two archived releases is then just the ordinary
+`diff` command:
+
+```bash
+webmcp-contract diff .webmcp-contract-archive/v1.3.0.json .webmcp-contract-archive/v1.4.0.json
+```
+
+`action/`'s `archive: true` input automates this on every push to the default branch —
+see [`action/README.md`](action#cross-release-archive).
 
 ## Change classification
 
