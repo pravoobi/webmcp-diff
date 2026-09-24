@@ -164,13 +164,14 @@
   }
 
   function renderTool(tool) {
+    // Pre-escaped, trusted HTML fragment (not raw user content) — do not escapeHtml() this again.
     const states = tool.states?.length ? ` <span class="muted">[${tool.states.map(escapeHtml).join(", ")}]</span>` : "";
     const lifecycle = tool.lifecycle === "conditional" ? `conditional${states}` : "static";
     return `<tr>
       <td class="tool-name">${escapeHtml(tool.name)}</td>
       <td>${riskBadge(tool.risk)}</td>
       <td>${escapeHtml(tool.source)}</td>
-      <td>${escapeHtml(lifecycle)}</td>
+      <td>${lifecycle}</td>
       <td>${escapeHtml(tool.description)}
         <details class="tool-details"><summary>schema / annotations</summary>
           <pre>${escapeHtml(JSON.stringify({ inputSchema: tool.inputSchema, annotations: tool.annotations }, null, 2))}</pre>
